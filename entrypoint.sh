@@ -198,7 +198,7 @@ _push_to_github() {
                 exit 0;
             else
                 if _check_push_error "$gitPushMessage"; then
-                    echo "\nRetry the push...\n"
+                    printf "\nRetry the push...\n"
                     echo "INPUT_FILE_PATTERN: ${INPUT_FILE_PATTERN}";
                     read -r -a INPUT_FILE_PATTERN_EXPANDED <<< "$INPUT_FILE_PATTERN";
                     git reset --soft @{u};
