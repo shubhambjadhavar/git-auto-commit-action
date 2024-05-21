@@ -162,6 +162,15 @@ _tag_commit() {
     fi
 }
 
+_check_push_error() {
+    local error_message="$1";
+    if [[ $error_message == *"fetch first"* || $error_message == *"cannot lock ref"* ]]; then
+        return 0;
+    else
+        return 1;
+    fi
+}
+
 _push_to_github() {
 
     echo "INPUT_PUSH_OPTIONS: ${INPUT_PUSH_OPTIONS}";
@@ -181,10 +190,32 @@ _push_to_github() {
             _log "debug" "git push origin";
             git push origin ${INPUT_PUSH_OPTIONS:+"${INPUT_PUSH_OPTIONS_ARRAY[@]}"};
         fi
-
     else
         _log "debug" "Push commit to remote branch $INPUT_BRANCH";
-        git push --set-upstream origin "HEAD:$INPUT_BRANCH" --follow-tags --atomic ${INPUT_PUSH_OPTIONS:+"${INPUT_PUSH_OPTIONS_ARRAY[@]}"};
+        while true; do
+            if gitPushMessage=$(git push --set-upstream origin "HEAD:$INPUT_BRANCH" --follow-tags --atomic ${INPUT_PUSH_OPTIONS:+"${INPUT_PUSH_OPTIONS_ARRAY[@]}"} 2>&1); then
+                echo "$gitPushMessage";
+                exit 0;
+            else
+                if _check_push_error "$gitPushMessage"; then
+                    echo "\nRetry the push...\n"
+                    echo "INPUT_FILE_PATTERN: ${INPUT_FILE_PATTERN}";
+                    read -r -a INPUT_FILE_PATTERN_EXPANDED <<< "$INPUT_FILE_PATTERN";
+                    git reset --soft @{u};
+                    git reset HEAD ${INPUT_FILE_PATTERN:+"${INPUT_FILE_PATTERN_EXPANDED[@]}"};
+                    git stash;
+                    git pull origin "$INPUT_BRANCH";
+                    if [ -n "$(git stash list)" ]; then
+                        git stash pop;
+                    fi
+                    _add_files
+                    _local_commit
+                else
+                    echo "$gitPushMessage";
+                    exit 1;
+                fi
+            fi
+        done
     fi
 }
 
