@@ -48,7 +48,11 @@ _main() {
 
             _tag_commit
 
-            _push_to_github
+            if "$INPUT_SKIP_PUSH"; then
+                _log "debug" "git-push will not be executed.";
+            else
+                _push_to_github
+            fi
         else
             _set_github_output "changes_detected" "false"
 
