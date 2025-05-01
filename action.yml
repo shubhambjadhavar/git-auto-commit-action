@@ -60,6 +60,10 @@ inputs:
     description: Skip the call to git-fetch.
     required: false
     default: false
+  skip_psuh:
+    description: Skip the call to git-psuh.
+    required: false
+    default: false
   skip_checkout:
     description: Skip the call to git-checkout.
     required: false
